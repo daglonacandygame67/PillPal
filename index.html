@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>PillPal</title>
+<style>
+  html, body { margin:0; padding:0; min-height:100vh; background:#E7E2D3; }
+  #root { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 0; }
+  @media (max-width:460px){ #root{ padding:0; } }
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ---------------- ICONS (self-contained, no external icon package) ---------------- */
+function Icon({ children, size = 18, color = "currentColor", strokeWidth = 2, style, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style} className={className}>
+      {children}
+    </svg>
+  );
+}
+const Pill = (p) => <Icon {...p}><path d="M10.5 20.5 3.5 13.5a5 5 0 1 1 7-7l7 7a5 5 0 1 1-7 7Z" /><line x1="8.5" y1="8.5" x2="15.5" y2="15.5" /></Icon>;
+const Settings = (p) => <Icon {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></Icon>;
+const Users = (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></Icon>;
+const CalendarDays = (p) => <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Icon>;
+const CheckCircle2 = (p) => <Icon {...p}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></Icon>;
+const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" /></Icon>;
+const ShieldAlert = (p) => <Icon {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon>;
+const ChevronRight = (p) => <Icon {...p}><polyline points="9 18 15 12 9 6" /></Icon>;
+const ChevronDown = (p) => <Icon {...p}><polyline points="6 9 12 15 18 9" /></Icon>;
+const RotateCcw = (p) => <Icon {...p}><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" /><path d="M3 3v5h5" /></Icon>;
+const LayoutGrid = (p) => <Icon {...p}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></Icon>;
+const ClipboardList = (p) => <Icon {...p}><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="15" y2="16" /></Icon>;
+const Zap = (p) => <Icon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></Icon>;
+const X = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>;
+const Check = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12" /></Icon>;
+const Sun = (p) => <Icon {...p}><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></Icon>;
+const Moon = (p) => <Icon {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></Icon>;
+const Plus = (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>;
+const Trash2 = (p) => <Icon {...p}><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></Icon>;
+const PackageMinus = (p) => <Icon {...p}><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z" /><polyline points="3.29 7 12 12 20.71 7" /><line x1="12" y1="22" x2="12" y2="12" /><line x1="15" y1="10" x2="9" y2="10" /></Icon>;
+
+/* ---------------- STORAGE (localStorage, so it works on any static host) ---------------- */
+const STORAGE_KEY = "pillpal:v2:state";
+const storage = {
+  async get(key) {
+    try {
+      const v = window.localStorage.getItem(key);
+      return v !== null ? { value: v } : null;
+    } catch (e) { return null; }
+  },
+  async set(key, value) {
+    try { window.localStorage.setItem(key, value); return { value }; } catch (e) { return null; }
+  },
+};
+
+const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_LABELS = { Sun: "S", Mon: "M", Tue: "T", Wed: "W", Thu: "T", Fri: "F", Sat: "S" };
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+// The elder-facing screen borrows its color from the actual sky outside —
+// dawn, day, dusk, night — so the device reads as a bedside object that
+// belongs to the time of day, not a generic app screen.
+function getElderTheme(hour) {
+  if (hour >= 5 && hour < 8) {
+    return { grad: "linear-gradient(180deg, #F6D6B4 0%, #FAE9D6 52%, #F6EFDF 100%)", night: false, name: "dawn" };
+  }
+  if (hour >= 8 && hour < 17) {
+    return { grad: "linear-gradient(180deg, #D6E5EC 0%, #E9F0E7 52%, #F3F1E5 100%)", night: false, name: "day" };
+  }
+  if (hour >= 17 && hour < 20) {
+    return { grad: "linear-gradient(180deg, #E6C9D2 0%, #F1DAC2 52%, #F6ECDC 100%)", night: false, name: "dusk" };
+  }
+  return { grad: "linear-gradient(180deg, #131A2A 0%, #1E2740 52%, #2A3350 100%)", night: true, name: "night" };
+}
+
+function defaultSlots() {
+  return Array.from({ length: 12 }, (_, i) => ({
+    id: i + 1,
+    name: "",
+    time: "08:00",
+    days: { Sun: true, Mon: true, Tue: true, Wed: true, Thu: true, Fri: true, Sat: true },
+    dose: "",
+    active: false,
+    stock: "",
+    lowStockAt: 5,
+  }));
+}
+
+function defaultState() {
+  return {
+    profile: {
+      elderlyName: "",
+      emergencyNote: "",
+      contacts: [{ id: uid(), name: "", phone: "", relation: "Primary caregiver" }],
+    },
+    slots: defaultSlots(),
+    logs: [],
+    activeAlert: null,
+    settings: { soundOn: true, snoozeMinutes: 5, missedAfterMinutes: 60 },
+  };
+}
+
+function todayKey(d) { return d.toISOString().slice(0, 10); }
+function weekdayKey(d) { return DAY_KEYS[d.getDay()]; }
+
+function formatTime12(hhmm) {
+  if (!hhmm) return "--:--";
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+function daysSummary(days) {
+  const on = DAY_KEYS.filter((d) => days[d]);
+  if (on.length === 7) return "Every day";
+  if (on.length === 0) return "No days set";
+  return on.join(", ");
+}
+
+function minutesUntil(now, hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const target = new Date(now);
+  target.setHours(h, m, 0, 0);
+  return (target - now) / 60000;
+}
+
+function decrementStock(slots, slotId) {
+  return slots.map((s) => {
+    if (s.id !== slotId) return s;
+    if (s.stock === "" || s.stock === null || s.stock === undefined) return s;
+    const n = Number(s.stock);
+    if (Number.isNaN(n)) return s;
+    return { ...s, stock: Math.max(0, n - 1) };
+  });
+}
+
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [660, 880, 660];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.35);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.35 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.35 + 0.32);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.35);
+      osc.stop(ctx.currentTime + i * 0.35 + 0.34);
+    });
+  } catch (e) { /* audio not available */ }
+}
+
+function App() {
+  const [state, setState] = useState(null);
+  const [view, setView] = useState("loading");
+  const [tab, setTab] = useState("overview");
+  const [toast, setToast] = useState(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const stateRef = useRef(null);
+  const lastAlertedSlotRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await storage.get(STORAGE_KEY);
+        if (res && res.value) {
+          const parsed = JSON.parse(res.value);
+          stateRef.current = parsed;
+          setState(parsed);
+          setView("roleSelect");
+        } else {
+          const d = defaultState();
+          stateRef.current = d; setState(d); setView("roleSelect");
+        }
+      } catch (e) {
+        const d = defaultState();
+        stateRef.current = d; setState(d); setView("roleSelect");
+      }
+    })();
+  }, []);
+
+  const persist = useCallback(async (next) => {
+    stateRef.current = next;
+    setState(next);
+    try { await storage.set(STORAGE_KEY, JSON.stringify(next)); } catch (e) { /* best effort */ }
+  }, []);
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
+
+  useEffect(() => {
+    if (!state) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await storage.get(STORAGE_KEY);
+        if (res && res.value) {
+          const parsed = JSON.parse(res.value);
+          if (JSON.stringify(parsed) !== JSON.stringify(stateRef.current)) {
+            stateRef.current = parsed; setState(parsed);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [state]);
+
+  useEffect(() => {
+    if (!state) return;
+    const tick = () => {
+      const cur = stateRef.current;
+      if (!cur) return;
+      const now = new Date();
+      const tKey = todayKey(now);
+      const wKey = weekdayKey(now);
+      let logs = [...cur.logs];
+      let activeAlert = cur.activeAlert;
+      let changed = false;
+
+      cur.slots.forEach((slot) => {
+        if (!slot.active || !slot.days[wKey] || !slot.name) return;
+        const [h, m] = slot.time.split(":").map(Number);
+        const scheduled = new Date(now); scheduled.setHours(h, m, 0, 0);
+        const existing = logs.find((l) => l.slotId === slot.id && l.date === tKey);
+
+        if (!existing) {
+          if (now >= scheduled) {
+            const log = { id: `${slot.id}-${tKey}`, slotId: slot.id, date: tKey, name: slot.name,
+              scheduledAt: scheduled.toISOString(), status: "pending", actionAt: null, synthetic: false };
+            logs.push(log);
+            if (!activeAlert) activeAlert = { slotId: slot.id, logId: log.id, triggeredAt: now.toISOString(), snoozedUntil: null };
+            changed = true;
+          }
+        } else if (existing.status === "pending") {
+          const minsPast = (now - new Date(existing.scheduledAt)) / 60000;
+          if (minsPast > cur.settings.missedAfterMinutes) {
+            existing.status = "missed"; changed = true;
+            if (activeAlert && activeAlert.slotId === slot.id) activeAlert = null;
+          } else if (!activeAlert) {
+            activeAlert = { slotId: slot.id, logId: existing.id, triggeredAt: existing.scheduledAt, snoozedUntil: null };
+            changed = true;
+          }
+        }
+      });
+
+      if (changed) persist({ ...cur, logs, activeAlert });
+    };
+    tick();
+    const interval = setInterval(tick, 15000);
+    return () => clearInterval(interval);
+  }, [state, persist]);
+
+  useEffect(() => {
+    if (!state) return;
+    const alert = state.activeAlert;
+    if (alert && alert.slotId !== lastAlertedSlotRef.current) {
+      lastAlertedSlotRef.current = alert.slotId;
+      if (state.settings.soundOn && view === "elderly") playChime();
+    }
+    if (!alert) lastAlertedSlotRef.current = null;
+  }, [state, view]);
+
+  if (view === "loading" || !state) {
+    return (
+      <div className="app-frame boot-frame">
+        <GlobalStyle />
+        <LogoMark size={40} />
+        <span className="boot-text">Loading PillPal…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pillpal-root">
+      <GlobalStyle />
+      {view === "roleSelect" && (
+        <RoleSelect profile={state.profile} onPick={(v) => { setTab("overview"); setView(v); }} />
+      )}
+      {view === "caregiver" && (
+        <Caregiver
+          state={state} tab={tab} setTab={setTab} persist={persist} onSwitch={() => setView("roleSelect")}
+          showToast={showToast} confirmReset={confirmReset} setConfirmReset={setConfirmReset}
+        />
+      )}
+      {view === "elderly" && (
+        <Elderly state={state} persist={persist} onSwitch={() => setView("roleSelect")} helpOpen={helpOpen} setHelpOpen={setHelpOpen} />
+      )}
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+function LogoMark({ size = 28 }) {
+  return (
+    <div className="logo-mark" style={{ width: size, height: size }}>
+      <Pill size={size * 0.55} color="#fff" strokeWidth={2.4} />
+    </div>
+  );
+}
+
+/* ---------------- ROLE SELECT ---------------- */
+function RoleSelect({ profile, onPick }) {
+  return (
+    <div className="app-frame">
+      <div className="role-scroll">
+        <LogoMark size={46} />
+        <div className="role-brand">PillPal</div>
+        <p className="role-hint">Choose which device this is. The dispenser shows the elderly view; the caregiver's phone shows the caregiver view.</p>
+        <button className="role-card role-card--elder" onClick={() => onPick("elderly")}>
+          <Sun size={30} />
+          <div>
+            <div className="role-card-title">Elderly view</div>
+            <div className="role-card-sub">For {profile.elderlyName || "the dispenser"}</div>
+          </div>
+          <ChevronRight size={20} className="role-card-chevron" />
+        </button>
+        <button className="role-card role-card--care" onClick={() => onPick("caregiver")}>
+          <Users size={30} />
+          <div>
+            <div className="role-card-title">Caregiver view</div>
+            <div className="role-card-sub">Manage the schedule</div>
+          </div>
+          <ChevronRight size={20} className="role-card-chevron" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- CAREGIVER ---------------- */
+function Caregiver({ state, tab, setTab, persist, onSwitch, showToast, confirmReset, setConfirmReset }) {
+  const tabs = [
+    { key: "overview", label: "Overview", icon: LayoutGrid },
+    { key: "schedule", label: "Schedule", icon: CalendarDays },
+    { key: "log", label: "Log", icon: ClipboardList },
+    { key: "contacts", label: "Contacts", icon: Users },
+    { key: "settings", label: "Settings", icon: Settings },
+  ];
+
+  const updateSlot = (id, patch) => persist({ ...state, slots: state.slots.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
+
+  const testPing = (slot) => {
+    if (!slot.name) { showToast("Add a medicine name before testing this slot."); return; }
+    const now = new Date();
+    const log = { id: `${slot.id}-${todayKey(now)}-test-${now.getTime()}`, slotId: slot.id, date: todayKey(now),
+      name: slot.name, scheduledAt: now.toISOString(), status: "pending", actionAt: null, synthetic: true };
+    const logs = [...state.logs.filter((l) => !(l.slotId === slot.id && l.date === todayKey(now) && l.status === "pending")), log];
+    persist({ ...state, logs, activeAlert: { slotId: slot.id, logId: log.id, triggeredAt: now.toISOString(), snoozedUntil: null } });
+    showToast(`Test alert sent to the elderly view for "${slot.name}".`);
+  };
+
+  const manualMark = (slot, status) => {
+    const now = new Date();
+    const tKey = todayKey(now);
+    const existing = state.logs.find((l) => l.slotId === slot.id && l.date === tKey);
+    let logs;
+    if (existing) {
+      logs = state.logs.map((l) => (l.id === existing.id ? { ...l, status, actionAt: now.toISOString() } : l));
+    } else {
+      const [h, m] = slot.time.split(":").map(Number);
+      const scheduled = new Date(now); scheduled.setHours(h, m, 0, 0);
+      logs = [...state.logs, { id: `${slot.id}-${tKey}`, slotId: slot.id, date: tKey, name: slot.name,
+        scheduledAt: scheduled.toISOString(), status, actionAt: now.toISOString(), synthetic: false }];
+    }
+    let slots = state.slots;
+    if (status === "taken") slots = decrementStock(slots, slot.id);
+    let activeAlert = state.activeAlert;
+    if (activeAlert && activeAlert.slotId === slot.id) activeAlert = null;
+    persist({ ...state, logs, slots, activeAlert });
+    showToast(`Marked "${slot.name}" as ${status}.`);
+  };
+
+  const resetAll = () => { persist(defaultState()); setConfirmReset(false); onSwitch(); };
+
+  return (
+    <div className="app-frame">
+      <header className="app-header">
+        <div className="app-header-left"><LogoMark size={30} /><span className="app-header-title">PillPal</span></div>
+        <button className="icon-btn" onClick={onSwitch} title="Switch view"><RotateCcw size={17} /></button>
+      </header>
+      <div className="app-content">
+        {tab === "overview" && <Overview state={state} setTab={setTab} manualMark={manualMark} />}
+        {tab === "schedule" && <Schedule state={state} updateSlot={updateSlot} testPing={testPing} />}
+        {tab === "log" && <Log state={state} manualMark={manualMark} />}
+        {tab === "contacts" && <Contacts state={state} persist={persist} showToast={showToast} />}
+        {tab === "settings" && (
+          <SettingsPanel state={state} persist={persist} confirmReset={confirmReset} setConfirmReset={setConfirmReset} resetAll={resetAll} />
+        )}
+      </div>
+      <nav className="app-tabbar">
+        {tabs.map((t) => (
+          <button key={t.key} className={`tabbar-item ${tab === t.key ? "active" : ""}`} onClick={() => setTab(t.key)}>
+            <t.icon size={20} />
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function Overview({ state, setTab, manualMark }) {
+  const now = new Date();
+  const wKey = weekdayKey(now);
+  const tKey = todayKey(now);
+  const todaysSlots = state.slots
+    .filter((s) => s.active && s.name && s.days[wKey])
+    .map((s) => {
+      const log = state.logs.find((l) => l.slotId === s.id && l.date === tKey);
+      return { ...s, status: log ? log.status : "upcoming" };
+    })
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  const lowStock = state.slots.filter((s) => s.active && s.stock !== "" && s.stock !== null && Number(s.stock) <= Number(s.lowStockAt));
+
+  const last7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - i); return todayKey(d); });
+  const recentLogs = state.logs.filter((l) => last7.includes(l.date) && l.status !== "pending");
+  const taken = recentLogs.filter((l) => l.status === "taken").length;
+  const missed = recentLogs.filter((l) => l.status === "missed").length;
+  const total = taken + missed;
+  const adherence = total ? Math.round((taken / total) * 100) : null;
+
+  const radius = 86, cx = 110, cy = 110;
+  const activeWithTime = state.slots.filter((s) => s.active && s.name);
+
+  return (
+    <div className="section">
+      <h2 className="section-title">Overview</h2>
+
+      <div className="card clock-card">
+        <div className="card-label">Today's doses by time</div>
+        <svg viewBox="0 0 220 220" className="clock-svg">
+          <defs>
+            <linearGradient id="clockRing" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="var(--teal)" />
+              <stop offset="100%" stopColor="var(--amber)" />
+            </linearGradient>
+          </defs>
+          <circle cx={cx} cy={cy} r={radius} fill="var(--slate-50)" stroke="var(--slate-100)" strokeWidth="2" />
+          <circle cx={cx} cy={cy} r={radius} fill="none" stroke="url(#clockRing)" strokeWidth="1.5" strokeOpacity="0.35" />
+          {Array.from({ length: 12 }, (_, i) => {
+            const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
+            const x1 = cx + Math.cos(angle) * (radius - 6), y1 = cy + Math.sin(angle) * (radius - 6);
+            const x2 = cx + Math.cos(angle) * radius, y2 = cy + Math.sin(angle) * radius;
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--slate-800)" strokeOpacity="0.2" strokeWidth="2" />;
+          })}
+          {activeWithTime.map((s) => {
+            const [h, m] = s.time.split(":").map(Number);
+            const angle = ((h % 12) + m / 60) / 12 * 2 * Math.PI - Math.PI / 2;
+            const x = cx + Math.cos(angle) * (radius - 18), y = cy + Math.sin(angle) * (radius - 18);
+            const log = state.logs.find((l) => l.slotId === s.id && l.date === tKey);
+            const color = log?.status === "taken" ? "var(--sage)" : log?.status === "missed" ? "var(--clay)" : "var(--amber)";
+            return <circle key={s.id} cx={x} cy={y} r={7} fill={color} stroke="#fff" strokeWidth="1.5" />;
+          })}
+          <circle cx={cx} cy={cy} r={3} fill="var(--ink)" />
+        </svg>
+        <div className="clock-legend">
+          <span><i className="dot" style={{ background: "var(--amber)" }} /> Upcoming / pending</span>
+          <span><i className="dot" style={{ background: "var(--sage)" }} /> Taken</span>
+          <span><i className="dot" style={{ background: "var(--clay)" }} /> Missed</span>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-label">7-day adherence</div>
+        <div className="adherence-num">{adherence === null ? "—" : `${adherence}%`}</div>
+        <div className="adherence-sub">{total ? `${taken} taken · ${missed} missed` : "No recorded doses yet"}</div>
+        <div className="adherence-bar"><div className="adherence-bar-fill" style={{ width: `${adherence || 0}%` }} /></div>
+      </div>
+
+      {lowStock.length > 0 && (
+        <div className="card alert-card">
+          <div className="card-label" style={{ color: "var(--clay)" }}><PackageMinus size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />Running low</div>
+          {lowStock.map((s) => (
+            <div key={s.id} className="today-row">
+              <span className="today-name">{s.name}</span>
+              <span className="stock-pill">{s.stock} left</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-label">Today's schedule</div>
+        {todaysSlots.length === 0 && <div className="empty-note">No active doses scheduled for today. Add one in Schedule.</div>}
+        {todaysSlots.map((s) => (
+          <div key={s.id} className="today-row">
+            <span className="today-time">{formatTime12(s.time)}</span>
+            <span className="today-name">{s.name}</span>
+            <StatusBadge status={s.status} />
+            {(s.status === "pending" || s.status === "upcoming") && (
+              <button className="mini-icon-btn" title="Mark taken" onClick={() => manualMark(s, "taken")}><Check size={13} /></button>
+            )}
+          </div>
+        ))}
+        <button className="link-btn" onClick={() => setTab("schedule")}>Edit schedule <ChevronRight size={14} /></button>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    taken: { label: "Taken", cls: "badge-taken" },
+    missed: { label: "Missed", cls: "badge-missed" },
+    pending: { label: "Pending", cls: "badge-pending" },
+    upcoming: { label: "Upcoming", cls: "badge-upcoming" },
+  };
+  const s = map[status] || map.upcoming;
+  return <span className={`badge ${s.cls}`}>{s.label}</span>;
+}
+
+/* ---------------- SCHEDULE (accordion cards) ---------------- */
+function Schedule({ state, updateSlot, testPing }) {
+  const [openId, setOpenId] = useState(null);
+  const lowStock = (s) => s.stock !== "" && s.stock !== null && Number(s.stock) <= Number(s.lowStockAt);
+
+  return (
+    <div className="section">
+      <h2 className="section-title">Schedule</h2>
+      <p className="section-sub">12 slots — set a time, the days it applies, and turn it on.</p>
+      {state.slots.map((slot) => {
+        const open = openId === slot.id;
+        return (
+          <div key={slot.id} className={`slot-card ${slot.active ? "" : "slot-card--off"}`}>
+            <button className="slot-card-head" onClick={() => setOpenId(open ? null : slot.id)}>
+              <span className="slot-capsule">{slot.id}</span>
+              <span className="slot-head-info">
+                <span className="slot-head-name">{slot.name || "Empty slot"}</span>
+                <span className="slot-head-meta">{formatTime12(slot.time)} · {daysSummary(slot.days)}</span>
+              </span>
+              {lowStock(slot) && <span className="stock-pill">{slot.stock} left</span>}
+              <ChevronDown size={18} className={`chev ${open ? "chev-open" : ""}`} />
+            </button>
+            {open && (
+              <div className="slot-card-body">
+                <label className="form-label">Medicine name</label>
+                <input className="form-input" value={slot.name} placeholder="e.g. Metformin"
+                  onChange={(e) => updateSlot(slot.id, { name: e.target.value })} />
+
+                <label className="form-label">Time</label>
+                <input className="form-input" type="time" value={slot.time} onChange={(e) => updateSlot(slot.id, { time: e.target.value })} />
+
+                <label className="form-label">Days</label>
+                <div className="day-chips">
+                  {DAY_KEYS.map((d) => (
+                    <button key={d} className={`day-chip ${slot.days[d] ? "on" : ""}`}
+                      onClick={() => updateSlot(slot.id, { days: { ...slot.days, [d]: !slot.days[d] } })}>{DAY_LABELS[d]}</button>
+                  ))}
+                </div>
+
+                <label className="form-label">Dose / notes</label>
+                <input className="form-input" value={slot.dose} placeholder="e.g. 1 tablet, with food"
+                  onChange={(e) => updateSlot(slot.id, { dose: e.target.value })} />
+
+                <div className="two-col">
+                  <div>
+                    <label className="form-label">Pills remaining</label>
+                    <input className="form-input" type="number" min="0" value={slot.stock}
+                      onChange={(e) => updateSlot(slot.id, { stock: e.target.value })} placeholder="—" />
+                  </div>
+                  <div>
+                    <label className="form-label">Low-stock alert at</label>
+                    <input className="form-input" type="number" min="0" value={slot.lowStockAt}
+                      onChange={(e) => updateSlot(slot.id, { lowStockAt: Number(e.target.value) })} />
+                  </div>
+                </div>
+
+                <div className="slot-card-actions">
+                  <button className={`toggle ${slot.active ? "toggle-on" : ""}`} onClick={() => updateSlot(slot.id, { active: !slot.active })}>
+                    <span className="toggle-knob" />
+                  </button>
+                  <span className="toggle-caption">{slot.active ? "Active" : "Off"}</span>
+                  <button className="mini-btn" onClick={() => testPing(slot)}><Zap size={14} /> Test ping</button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- LOG (card list) ---------------- */
+function Log({ state, manualMark }) {
+  const [range, setRange] = useState(7);
+  const now = new Date();
+  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - range);
+  const rows = [...state.logs]
+    .filter((l) => range === 0 || new Date(l.scheduledAt) >= cutoff)
+    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt));
+
+  return (
+    <div className="section">
+      <h2 className="section-title">Adherence log</h2>
+      <div className="range-row">
+        {[{ v: 7, l: "7 days" }, { v: 30, l: "30 days" }, { v: 0, l: "All" }].map((r) => (
+          <button key={r.v} className={`range-btn ${range === r.v ? "active" : ""}`} onClick={() => setRange(r.v)}>{r.l}</button>
+        ))}
+      </div>
+      {rows.length === 0 && <div className="empty-note">No entries in this range yet.</div>}
+      {rows.map((l) => {
+        const slot = state.slots.find((s) => s.id === l.slotId);
+        return (
+          <div key={l.id} className="log-card">
+            <div className="log-card-top">
+              <span className="log-date">{l.date}</span>
+              <StatusBadge status={l.status} />
+            </div>
+            <div className="log-name">{l.name}{l.synthetic ? " · test" : ""}</div>
+            <div className="log-time mono">Scheduled {new Date(l.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {l.actionAt ? ` · Action ${new Date(l.actionAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</div>
+            {l.status === "pending" && slot && (
+              <div className="log-actions">
+                <button className="mini-btn" onClick={() => manualMark(slot, "taken")}><Check size={13} /> Mark taken</button>
+                <button className="mini-btn mini-btn--muted" onClick={() => manualMark(slot, "missed")}><X size={13} /> Mark missed</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- CONTACTS ---------------- */
+function Contacts({ state, persist, showToast }) {
+  const [name, setName] = useState(state.profile.elderlyName);
+  const [note, setNote] = useState(state.profile.emergencyNote);
+  const [contacts, setContacts] = useState(state.profile.contacts);
+
+  const saveProfile = () => { persist({ ...state, profile: { ...state.profile, elderlyName: name, emergencyNote: note, contacts } }); showToast("Saved."); };
+  const updateContact = (id, patch) => setContacts(contacts.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  const addContact = () => setContacts([...contacts, { id: uid(), name: "", phone: "", relation: "Family" }]);
+  const removeContact = (id) => setContacts(contacts.filter((c) => c.id !== id));
+
+  return (
+    <div className="section">
+      <h2 className="section-title">Contacts</h2>
+
+      <div className="card">
+        <div className="card-label">Elderly person</div>
+        <label className="form-label">Name</label>
+        <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} />
+        <label className="form-label">Emergency note (shown on Help screen)</label>
+        <input className="form-input" value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+
+      <div className="card-label" style={{ margin: "16px 0 8px" }}>Caregivers & contacts</div>
+      {contacts.map((c) => (
+        <div key={c.id} className="card contact-card">
+          <div className="two-col">
+            <div>
+              <label className="form-label">Name</label>
+              <input className="form-input" value={c.name} onChange={(e) => updateContact(c.id, { name: e.target.value })} />
+            </div>
+            <div>
+              <label className="form-label">Relation</label>
+              <input className="form-input" value={c.relation} onChange={(e) => updateContact(c.id, { relation: e.target.value })} />
+            </div>
+          </div>
+          <label className="form-label">Phone</label>
+          <input className="form-input" value={c.phone} onChange={(e) => updateContact(c.id, { phone: e.target.value })} />
+          {contacts.length > 1 && (
+            <button className="mini-btn mini-btn--muted" style={{ marginTop: 10 }} onClick={() => removeContact(c.id)}><Trash2 size={13} /> Remove</button>
+          )}
+        </div>
+      ))}
+      <button className="mini-btn" onClick={addContact}><Plus size={14} /> Add contact</button>
+      <button className="btn-primary" style={{ marginTop: 18 }} onClick={saveProfile}><Check size={18} /> Save changes</button>
+    </div>
+  );
+}
+
+function SettingsPanel({ state, persist, confirmReset, setConfirmReset, resetAll }) {
+  const s = state.settings;
+  const update = (patch) => persist({ ...state, settings: { ...s, ...patch } });
+  return (
+    <div className="section">
+      <h2 className="section-title">Settings</h2>
+      <div className="card">
+        <div className="setting-row">
+          <div><div className="setting-title">Sound on alert</div><div className="setting-sub">Plays a chime on the elderly view.</div></div>
+          <button className={`toggle ${s.soundOn ? "toggle-on" : ""}`} onClick={() => update({ soundOn: !s.soundOn })}><span className="toggle-knob" /></button>
+        </div>
+        <div className="setting-row">
+          <div><div className="setting-title">Snooze length</div><div className="setting-sub">Wait before alerting again.</div></div>
+          <select className="form-input" style={{ width: 100 }} value={s.snoozeMinutes} onChange={(e) => update({ snoozeMinutes: Number(e.target.value) })}>
+            {[5, 10, 15, 20].map((v) => <option key={v} value={v}>{v} min</option>)}
+          </select>
+        </div>
+        <div className="setting-row">
+          <div><div className="setting-title">Mark as missed after</div><div className="setting-sub">No response by then logs as missed.</div></div>
+          <select className="form-input" style={{ width: 100 }} value={s.missedAfterMinutes} onChange={(e) => update({ missedAfterMinutes: Number(e.target.value) })}>
+            {[30, 60, 90, 120].map((v) => <option key={v} value={v}>{v} min</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="card" style={{ borderColor: "var(--clay)", marginTop: 16 }}>
+        <div className="setting-title" style={{ color: "var(--clay)" }}>Danger zone</div>
+        <div className="setting-sub">Clears all slots, logs, and profile info.</div>
+        {!confirmReset ? (
+          <button className="danger-btn" onClick={() => setConfirmReset(true)}>Reset all data</button>
+        ) : (
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button className="danger-btn" onClick={resetAll}>Yes, erase everything</button>
+            <button className="mini-btn" onClick={() => setConfirmReset(false)}>Cancel</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- ELDERLY ---------------- */
+function Elderly({ state, persist, onSwitch, helpOpen, setHelpOpen }) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+
+  const theme = getElderTheme(now.getHours());
+  const alert = state.activeAlert;
+  const snoozed = alert?.snoozedUntil && new Date(alert.snoozedUntil) > now;
+  const showOverlay = alert && !snoozed;
+  const alertSlot = alert ? state.slots.find((s) => s.id === alert.slotId) : null;
+
+  const wKey = weekdayKey(now);
+  const upcoming = state.slots
+    .filter((s) => s.active && s.name && s.days[wKey])
+    .map((s) => ({ ...s, mins: minutesUntil(now, s.time) }))
+    .filter((s) => s.mins > -1)
+    .sort((a, b) => a.mins - b.mins)[0];
+
+  const takeMedicine = () => {
+    let slots = decrementStock(state.slots, alert.slotId);
+    const logs = state.logs.map((l) => (l.id === alert.logId ? { ...l, status: "taken", actionAt: now.toISOString() } : l));
+    persist({ ...state, logs, slots, activeAlert: null });
+  };
+  const snooze = () => persist({ ...state, activeAlert: { ...alert, snoozedUntil: new Date(now.getTime() + state.settings.snoozeMinutes * 60000).toISOString() } });
+  const primaryContact = state.profile.contacts?.[0];
+
+  return (
+    <div className="app-frame" style={{ background: theme.grad }}>
+      <div className={`elder-content ${theme.night ? "elder-content--night" : ""}`}>
+        <button className="elder-switch" onClick={onSwitch} title="Switch view">⇄</button>
+        <div className="elder-top">
+          <div className="elder-greeting">
+            {now.getHours() < 18 ? <Sun size={20} /> : <Moon size={20} />}
+            <span>{now.getHours() < 12 ? "Good morning" : now.getHours() < 18 ? "Good afternoon" : "Good evening"}{state.profile.elderlyName ? `, ${state.profile.elderlyName}` : ""}</span>
+          </div>
+          <div className="elder-clock">{now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
+          <div className="elder-date">{now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</div>
+        </div>
+
+        <div className="elder-card">
+          {upcoming ? (
+            <>
+              <div className="elder-card-label">Your next medicine</div>
+              <div className="elder-card-name"><Pill size={26} /> {upcoming.name}</div>
+              <div className="elder-card-time">{formatTime12(upcoming.time)}</div>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 size={38} color="#6F9683" />
+              <div className="elder-card-name">All done for today</div>
+            </>
+          )}
+        </div>
+
+        <button className="elder-help-btn" onClick={() => setHelpOpen(true)}><Phone size={22} /> Need help</button>
+      </div>
+
+      {showOverlay && alertSlot && (
+        <div className="elder-overlay">
+          <div className="elder-overlay-card">
+            <div className="elder-pill-icon"><Pill size={48} color="#fff" /></div>
+            <div className="elder-overlay-title">Time for your medicine</div>
+            <div className="elder-overlay-name">{alertSlot.name}</div>
+            {alertSlot.dose && <div className="elder-overlay-dose">{alertSlot.dose}</div>}
+            <button className="elder-take-btn" onClick={takeMedicine}><Check size={24} /> I took it</button>
+            <button className="elder-snooze-btn" onClick={snooze}>Remind me in {state.settings.snoozeMinutes} minutes</button>
+          </div>
+        </div>
+      )}
+
+      {helpOpen && (
+        <div className="elder-overlay">
+          <div className="elder-overlay-card">
+            <ShieldAlert size={40} color="#B65C4B" />
+            <div className="elder-overlay-title">Getting help</div>
+            <div className="elder-help-text">{state.profile.emergencyNote || "Your caregiver will be notified."}</div>
+            {primaryContact?.name && <div className="elder-help-name">{primaryContact.name}</div>}
+            {primaryContact?.phone && <div className="elder-help-phone">{primaryContact.phone}</div>}
+            <button className="elder-take-btn" onClick={() => setHelpOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- STYLES ---------------- */
+function GlobalStyle() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+      :root {
+        --cream:#F5F1E6; --cream-2:#EAE2CC; --ink:#232F47; --ink-soft:#5C6C88;
+        --amber:#C2802E; --amber-soft:#EFD9AE;
+        --sage:#4E7A63; --sage-soft:#D5E6DC;
+        --clay:#A24F3E; --clay-soft:#ECD5CD;
+        --slate-900:#181F30; --slate-800:#242C41; --slate-50:#F4F6F3; --slate-100:#E5E9E6;
+        --teal:#2A6B77; --teal-soft:#D2E4E5;
+        --font-elder-display:'Fraunces',serif; --font-elder-body:'Nunito',sans-serif;
+        --font-care-ui:'Inter',sans-serif; --font-care-mono:'IBM Plex Mono',monospace;
+      }
+      * { box-sizing: border-box; }
+      .pillpal-root { font-family: var(--font-care-ui); display:flex; justify-content:center; }
+
+      .logo-mark { border-radius: 26%; background: linear-gradient(155deg, var(--amber), #A65F1E);
+        display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(194,128,46,0.32); flex-shrink:0; }
+
+      .app-frame { width:100%; max-width:420px; margin:0 auto; min-height:640px; height:min(800px,88vh);
+        background: var(--cream); border-radius:28px; overflow:hidden; display:flex; flex-direction:column;
+        position:relative; box-shadow: 0 20px 60px rgba(35,47,71,0.16); border:1px solid rgba(35,47,71,0.06);
+        transition: background 1.2s ease; }
+      .boot-frame { align-items:center; justify-content:center; gap:12px; }
+      .boot-text { font-size:14px; color: var(--ink-soft); margin-top:6px; }
+
+      .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+        background: var(--ink); color: #fff; padding: 9px 16px; border-radius: 999px;
+        font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 1200; max-width:88%; text-align:center; }
+
+      button, input, select { font: inherit; }
+      button:focus-visible, input:focus-visible, select:focus-visible, .day-chip:focus-visible {
+        outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px;
+      }
+
+      /* role select */
+      .role-scroll { flex:1; overflow-y:auto; padding:34px 22px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;
+        background: linear-gradient(180deg, #D6E5EC 0%, #EAF0E7 45%, var(--cream) 100%); }
+      .role-brand { font-family: var(--font-elder-display); font-weight:600; font-size:21px; color: var(--ink); margin-bottom:4px; }
+      .role-hint { color: var(--ink-soft); font-size:13px; margin:0 0 22px; }
+      .role-card { width:100%; padding:18px; border-radius:16px; border:none; cursor:pointer; margin-bottom:14px;
+        display:flex; align-items:center; gap:14px; text-align:left; }
+      .role-card-chevron { margin-left:auto; opacity:0.55; }
+      .role-card--elder { background:#fff; color: var(--ink); box-shadow: 0 10px 26px rgba(194,128,46,0.16); border: 2px solid var(--amber-soft); }
+      .role-card--care { background: var(--slate-900); color:#fff; box-shadow: 0 10px 26px rgba(24,31,48,0.28); }
+      .role-card-title { font-size:16px; font-weight:700; }
+      .role-card-sub { font-size:12px; opacity:0.7; }
+
+      /* caregiver app chrome */
+      .app-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+        background:#fff; border-bottom:1px solid var(--slate-100); flex-shrink:0; }
+      .app-header-left { display:flex; align-items:center; gap:9px; }
+      .app-header-title { font-weight:700; font-size:16px; color: var(--ink); }
+      .icon-btn { background: var(--slate-50); border:none; width:34px; height:34px; border-radius:10px; color: var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+      .app-content { flex:1; overflow-y:auto; padding:16px 16px 12px; background: var(--slate-50); }
+      .app-tabbar { display:flex; background:#fff; border-top:1px solid var(--slate-100); flex-shrink:0; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+      .tabbar-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none;
+        color: var(--ink-soft); font-size:10.5px; padding:6px 2px; border-radius:10px; cursor:pointer; }
+      .tabbar-item.active { color: var(--teal); }
+      .tabbar-item.active svg { filter: drop-shadow(0 1px 0 rgba(42,107,119,0.2)); }
+
+      .section-title { font-family: var(--font-elder-display); font-weight:600; color: var(--ink); font-size:20px; margin:2px 0 4px; }
+      .section-sub { color: var(--ink-soft); font-size:12.5px; margin:0 0 14px; }
+      .card { background:#fff; border:1px solid var(--slate-100); border-radius:14px; padding:16px; margin-bottom:12px; }
+      .card-label { font-size:11.5px; font-weight:700; color: var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; }
+      .clock-card { display:flex; flex-direction:column; align-items:center; }
+      .clock-svg { width:100%; max-width:190px; }
+      .clock-legend { display:flex; flex-direction:column; gap:6px; font-size:11.5px; color: var(--ink-soft); margin-top:6px; align-self:flex-start; }
+      .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
+      .adherence-num { font-family: var(--font-care-mono); font-size:30px; font-weight:600; color: var(--ink); }
+      .adherence-sub { font-size:12.5px; color: var(--ink-soft); margin-bottom:10px; }
+      .adherence-bar { height:8px; background: var(--slate-100); border-radius:6px; overflow:hidden; }
+      .adherence-bar-fill { height:100%; background: var(--sage); transition: width .4s ease; }
+      .alert-card { border-color: var(--clay-soft); background: #FDF8F6; }
+      .today-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--slate-100); font-size:13.5px; }
+      .today-row:last-of-type { border-bottom:none; }
+      .today-time { font-family: var(--font-care-mono); color: var(--ink-soft); width:64px; flex-shrink:0; }
+      .today-name { flex:1; color: var(--ink); font-weight:600; }
+      .stock-pill { background: var(--clay-soft); color:#7C3C2E; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; }
+      .empty-note { color: var(--ink-soft); font-size:12.5px; padding:6px 0; }
+      .link-btn { margin-top:6px; background:none; border:none; color: var(--teal); font-weight:600; font-size:13px; display:flex; align-items:center; gap:2px; cursor:pointer; padding:0; }
+
+      .badge { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+      .badge-taken { background: var(--sage-soft); color: #325641; }
+      .badge-missed { background: var(--clay-soft); color: #7C3C2E; }
+      .badge-pending { background: var(--amber-soft); color: #714A16; }
+      .badge-upcoming { background: var(--slate-100); color: var(--ink-soft); }
+      .mini-icon-btn { width:24px; height:24px; border-radius:8px; border:none; background: var(--sage-soft); color:#325641; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+
+      /* schedule accordion */
+      .slot-card { background:#fff; border:1px solid var(--slate-100); border-radius:14px; margin-bottom:10px; overflow:hidden; transition: opacity .15s; }
+      .slot-card--off { opacity:0.6; }
+      .slot-card-head { width:100%; display:flex; align-items:center; gap:11px; padding:13px 14px; background:none; border:none; cursor:pointer; text-align:left; }
+      .slot-capsule { font-family: var(--font-care-mono); font-size:10.5px; font-weight:700; width:28px; height:16px; flex-shrink:0;
+        border-radius:999px; background: var(--slate-100); color: var(--ink-soft); display:flex; align-items:center; justify-content:center;
+        transition: background .15s, color .15s; }
+      .slot-card:not(.slot-card--off) .slot-capsule { background: var(--teal); color:#fff; }
+      .slot-head-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+      .slot-head-name { font-size:14px; font-weight:600; color: var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .slot-head-meta { font-size:11.5px; color: var(--ink-soft); }
+      .chev { color: var(--ink-soft); transition: transform .15s; flex-shrink:0; }
+      .chev-open { transform: rotate(180deg); }
+      .slot-card-body { padding:0 14px 16px; border-top:1px solid var(--slate-100); }
+      .form-label { display:block; font-size:11.5px; font-weight:600; color: var(--ink-soft); margin: 12px 0 5px; }
+      .form-input { width:100%; padding:9px 11px; border-radius:9px; border:1px solid var(--slate-100); font-size:13.5px; color: var(--ink); background:#fff; font-family: var(--font-care-ui); }
+      .form-input:focus { outline:none; border-color: var(--teal); }
+      .day-chips { display:flex; gap:5px; flex-wrap:wrap; }
+      .day-chip { width:30px; height:30px; border-radius:8px; border:1px solid var(--slate-100); background:#fff; font-size:11px; color: var(--ink-soft); cursor:pointer; }
+      .day-chip.on { background: var(--teal); color:#fff; border-color: var(--teal); }
+      .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      .slot-card-actions { display:flex; align-items:center; gap:8px; margin-top:14px; }
+      .toggle-caption { font-size:12px; color: var(--ink-soft); margin-right:auto; }
+      .mini-btn { display:inline-flex; align-items:center; gap:5px; background: var(--amber-soft); color:#714A16; border:none;
+        padding:7px 12px; border-radius:9px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+      .mini-btn--muted { background: var(--slate-100); color: var(--ink-soft); }
+      .toggle { width:38px; height:22px; border-radius:999px; background: var(--slate-100); border:none; position:relative; cursor:pointer; flex-shrink:0; }
+      .toggle-on { background: var(--sage); }
+      .toggle-knob { position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition: left .15s; }
+      .toggle-on .toggle-knob { left:18px; }
+
+      /* log */
+      .range-row { display:flex; gap:8px; margin-bottom:14px; }
+      .range-btn { background:#fff; border:1px solid var(--slate-100); padding:6px 14px; border-radius:999px; font-size:12.5px; color: var(--ink-soft); cursor:pointer; }
+      .range-btn.active { background: var(--ink); color:#fff; border-color: var(--ink); }
+      .mono { font-family: var(--font-care-mono); }
+      .log-card { background:#fff; border:1px solid var(--slate-100); border-radius:12px; padding:12px 14px; margin-bottom:9px; }
+      .log-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+      .log-date { font-size:11.5px; color: var(--ink-soft); }
+      .log-name { font-size:14px; font-weight:600; color: var(--ink); }
+      .log-time { font-size:11.5px; color: var(--ink-soft); margin-top:2px; }
+      .log-actions { display:flex; gap:8px; margin-top:10px; }
+
+      /* contacts */
+      .contact-card { margin-bottom:10px; }
+      .btn-primary { width:100%; background: var(--amber); color:#fff; border:none; padding:13px 16px; border-radius:12px;
+        font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; }
+      .btn-primary:disabled { background: var(--slate-100); color: var(--ink-soft); cursor:not-allowed; }
+
+      /* settings */
+      .setting-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--slate-100); gap:12px; }
+      .setting-row:last-child { border-bottom:none; }
+      .setting-title { font-size:13.5px; font-weight:600; color: var(--ink); }
+      .setting-sub { font-size:11.5px; color: var(--ink-soft); }
+      .danger-btn { margin-top:10px; background: var(--clay); color:#fff; border:none; padding:9px 16px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; }
+
+      /* elderly — background gradient set inline per time of day on .app-frame */
+      .elder-content { flex:1; overflow-y:auto; padding: 26px 22px; display:flex; flex-direction:column; align-items:center;
+        justify-content:space-between; text-align:center; position:relative; font-family: var(--font-elder-body);
+        transition: color .8s ease; }
+      .elder-switch { position:absolute; top:14px; right:14px; background: rgba(255,255,255,0.55); border:1px solid rgba(35,47,71,0.12);
+        width:32px; height:32px; border-radius:10px; cursor:pointer; font-size:15px; color: var(--ink-soft); backdrop-filter: blur(6px); }
+      .elder-top { display:flex; flex-direction:column; align-items:center; gap:2px; }
+      .elder-greeting { display:flex; align-items:center; gap:8px; color: var(--ink-soft); font-size:16px; margin-bottom:2px; }
+      .elder-clock { font-family: var(--font-elder-display); font-optical-sizing:auto; font-weight:600; font-size:clamp(42px,14vw,62px); color: var(--ink); line-height:1; }
+      .elder-date { font-size:15px; color: var(--ink-soft); }
+      .elder-card { background:#fff; border-radius:20px; padding:22px 28px; width:100%;
+        box-shadow: 0 14px 34px rgba(35,47,71,0.12); display:flex; flex-direction:column; align-items:center; gap:5px; transition: box-shadow .8s ease; }
+      .elder-card-label { font-size:13px; color: var(--ink-soft); font-weight:600; }
+      .elder-card-name { display:flex; align-items:center; gap:9px; font-family: var(--font-elder-display); font-size:23px; font-weight:600; color: var(--ink); text-align:center; }
+      .elder-card-time { font-size:20px; color: var(--amber); font-weight:700; }
+      .elder-help-btn { display:flex; align-items:center; gap:9px; background: var(--ink); color:#fff; border:none;
+        padding:15px 26px; border-radius:999px; font-size:16px; font-weight:700; cursor:pointer; font-family: var(--font-elder-body); }
+
+      .elder-content--night { --ink:#F1EFE6; --ink-soft:#AEB8D2; }
+      .elder-content--night .elder-switch { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
+      .elder-content--night .elder-card { box-shadow: 0 0 46px rgba(120,150,220,0.28), 0 14px 34px rgba(0,0,0,0.4); }
+      .elder-content--night .elder-help-btn { background:#F1EFE6; color:#1A2236; }
+
+      .elder-overlay { position:absolute; inset:0; background: rgba(23,30,46,0.58); display:flex; align-items:center;
+        justify-content:center; z-index:1000; padding:20px; backdrop-filter: blur(3px); border-radius:28px; }
+      .elder-overlay-card { background:#fff; border-radius:24px; padding:32px 26px; width:100%;
+        display:flex; flex-direction:column; align-items:center; gap:9px; text-align:center;
+        box-shadow: 0 30px 70px rgba(0,0,0,0.28); animation: pop .25s ease; }
+      @keyframes pop { from { transform: scale(0.92); opacity:0; } to { transform: scale(1); opacity:1; } }
+      .elder-pill-icon { width:78px; height:78px; border-radius:50%; background: var(--amber); display:flex;
+        align-items:center; justify-content:center; margin-bottom:4px; animation: pulse 1.6s infinite; }
+      @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(194,128,46,0.35); } 50% { box-shadow: 0 0 0 14px rgba(194,128,46,0); } }
+      .elder-overlay-title { font-family: var(--font-elder-display); font-weight:600; font-size:20px; color: var(--ink); }
+      .elder-overlay-name { font-size:25px; font-weight:700; color: var(--ink); }
+      .elder-overlay-dose { font-size:15px; color: var(--ink-soft); }
+      .elder-help-text { font-size:16px; color: var(--ink-soft); margin: 3px 0; }
+      .elder-help-name { font-size:16px; color: var(--ink); font-weight:700; }
+      .elder-help-phone { font-family: var(--font-care-mono); font-size:19px; color: var(--ink); font-weight:600; }
+      .elder-take-btn { margin-top:12px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+        background: var(--sage); color:#fff; border:none; padding:16px; border-radius:16px; font-size:18px;
+        font-weight:700; cursor:pointer; font-family: var(--font-elder-body); }
+      .elder-snooze-btn { background:none; border:none; color: var(--ink-soft); font-size:14px; text-decoration:underline; cursor:pointer; margin-top:2px; font-family: var(--font-elder-body); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .elder-pill-icon, .elder-overlay-card { animation: none; }
+        * { transition-duration: 0.01ms !important; }
+      }
+
+      @media (max-width: 460px) {
+        .app-frame { border-radius:0; min-height:100vh; height:100vh; box-shadow:none; border:none; }
+        #root { padding:0; }
+      }
+    `}</style>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
